@@ -17,7 +17,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "db4cdde417233ef9",
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
           "name": "Document Index (pgvector)"
         }
       }
@@ -38,7 +38,7 @@
       ],
       "credentials": {
         "mySql": {
-          "id": "e0f7dc38afcbd8eb",
+          "id": "YOUR_MYSQL_CREDENTIAL_ID",
           "name": "MySQL account"
         }
       }
@@ -59,7 +59,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "db4cdde417233ef9",
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
           "name": "Document Index (pgvector)"
         }
       }
@@ -93,7 +93,7 @@
       ],
       "credentials": {
         "mySql": {
-          "id": "e0f7dc38afcbd8eb",
+          "id": "YOUR_MYSQL_CREDENTIAL_ID",
           "name": "MySQL account"
         }
       }
@@ -160,7 +160,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "db4cdde417233ef9",
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
           "name": "Document Index (pgvector)"
         }
       },
@@ -201,7 +201,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const STORAGE_BASE = 'https://ai-rooster.nl/storage/';\nconst item = $input.first().json;\n\nreturn [{\n  json: {\n    source_doc_id: item.id,\n    doc_name: item.doc_name,\n    filename: item.original_name || item.doc_name,\n    url: STORAGE_BASE + item.file_path,\n    user_id: 1\n  }\n}];"
+        "jsCode": "const STORAGE_BASE = 'https://your-domain.com/storage/';\nconst item = $input.first().json;\n\nreturn [{\n  json: {\n    source_doc_id: item.id,\n    doc_name: item.doc_name,\n    filename: item.original_name || item.doc_name,\n    url: STORAGE_BASE + item.file_path,\n    user_id: 1\n  }\n}];"
       },
       "id": "ad221dab-3df6-4ea7-beaf-b29277cc6fc4",
       "name": "Build Download URL1",
@@ -236,7 +236,7 @@
     {
       "parameters": {
         "method": "PUT",
-        "url": "http://kdaw9vesz8b10e381mspmg9r.148.251.86.132.sslip.io/tika",
+        "url": "http://your-tika-server:9998/tika",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
@@ -382,7 +382,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "db4cdde417233ef9",
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
           "name": "Document Index (pgvector)"
         }
       },
@@ -597,11 +597,11 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "19e433c9-aa80-4428-8c48-7bbcb2ee368c",
+  "versionId": "",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "8475a67cf1073f0652dbf96ae8c5dd7fce0316031a177943552e3338797e4512"
+    "instanceId": ""
   },
-  "id": "e70708be672caaa2",
+  "id": "",
   "tags": []
 }

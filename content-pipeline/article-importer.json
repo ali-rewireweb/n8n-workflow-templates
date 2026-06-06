@@ -29,7 +29,7 @@
       ],
       "credentials": {
         "s3": {
-          "id": "MmoouGoIkr4q5gke",
+          "id": "13a1a9ce31b786e2",
           "name": "my-blog S3 account"
         }
       }
@@ -73,7 +73,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "1EbC0sVOU32ZX4ZG",
+          "id": "797f34275d445ea8",
           "name": "my-blog-database"
         }
       }
@@ -305,12 +305,12 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
   },
-  "id": "qWTNKBPWLcVT3ksn",
+  "id": "48ad51658a508fdc",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "0ruZiTR1YLmoPrmY",
+      "id": "85a9be753decefce",
       "name": "My Blog"
     }
   ]

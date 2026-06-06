@@ -50,7 +50,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "mySql": {
-          "id": "hxCXUjnv2weT6LUj",
+          "id": "e0f7dc38afcbd8eb",
           "name": "MySQL account"
         }
       },
@@ -146,12 +146,12 @@
             "accept-encoding": "gzip, deflate",
             "content-type": "application/json",
             "x-brain-secret": "n8n-sql-datacall-26",
-            "x-forwarded-for": "10.0.1.1",
+            "x-forwarded-for": "10.0.0.1",
             "x-forwarded-host": "n8n.your-instance.nl",
             "x-forwarded-port": "443",
             "x-forwarded-proto": "https",
             "x-forwarded-server": "dda1aa3c3466",
-            "x-real-ip": "10.0.1.1"
+            "x-real-ip": "10.0.0.1"
           },
           "params": {},
           "query": {},
@@ -240,6 +240,6 @@
   "meta": {
     "instanceId": "8475a67cf1073f0652dbf96ae8c5dd7fce0316031a177943552e3338797e4512"
   },
-  "id": "jvzl4j4zPTiKxDJl",
+  "id": "40d93dff7f312ae3",
   "tags": []
 }

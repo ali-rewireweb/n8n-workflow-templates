@@ -55,7 +55,7 @@
       ],
       "credentials": {
         "openAiApi": {
-          "id": "zqDg8Uu8eh59Gi2a",
+          "id": "f8bd3aa7f976d7a6",
           "name": "Open AI Images"
         }
       }
@@ -95,7 +95,7 @@
       ],
       "credentials": {
         "s3": {
-          "id": "MmoouGoIkr4q5gke",
+          "id": "13a1a9ce31b786e2",
           "name": "my-blog S3 account"
         }
       }
@@ -182,12 +182,12 @@
   "meta": {
     "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
   },
-  "id": "8lIJmo3ZH3ZnOP4d",
+  "id": "8b0b8f52c5b9a969",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "0ruZiTR1YLmoPrmY",
+      "id": "85a9be753decefce",
       "name": "My Blog"
     }
   ]

@@ -17,7 +17,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "EsjSRLgiccfzzhIT",
+          "id": "db4cdde417233ef9",
           "name": "Document Index (pgvector)"
         }
       }
@@ -38,7 +38,7 @@
       ],
       "credentials": {
         "mySql": {
-          "id": "hxCXUjnv2weT6LUj",
+          "id": "e0f7dc38afcbd8eb",
           "name": "MySQL account"
         }
       }
@@ -59,7 +59,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "EsjSRLgiccfzzhIT",
+          "id": "db4cdde417233ef9",
           "name": "Document Index (pgvector)"
         }
       }
@@ -93,7 +93,7 @@
       ],
       "credentials": {
         "mySql": {
-          "id": "hxCXUjnv2weT6LUj",
+          "id": "e0f7dc38afcbd8eb",
           "name": "MySQL account"
         }
       }
@@ -160,7 +160,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "EsjSRLgiccfzzhIT",
+          "id": "db4cdde417233ef9",
           "name": "Document Index (pgvector)"
         }
       },
@@ -382,7 +382,7 @@
       ],
       "credentials": {
         "postgres": {
-          "id": "EsjSRLgiccfzzhIT",
+          "id": "db4cdde417233ef9",
           "name": "Document Index (pgvector)"
         }
       },
@@ -602,6 +602,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "8475a67cf1073f0652dbf96ae8c5dd7fce0316031a177943552e3338797e4512"
   },
-  "id": "Za3cHjQVlndNKHDK",
+  "id": "e70708be672caaa2",
   "tags": []
 }

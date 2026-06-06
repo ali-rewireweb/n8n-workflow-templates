@@ -77,7 +77,7 @@
       "name": "Append or update row in sheet",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "2h6qogULXrp6HZhP",
+          "id": "40e2b048607d5c3e",
           "name": "Google Sheets account"
         }
       }
@@ -106,6 +106,6 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
   },
-  "id": "Gx1UmNfPbyPnyLLZ",
+  "id": "024f0754d1d4b600",
   "tags": []
 }

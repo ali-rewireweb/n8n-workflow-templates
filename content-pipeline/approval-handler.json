@@ -19,7 +19,7 @@
       "webhookId": "my-blog-approval-v2",
       "credentials": {
         "telegramApi": {
-          "id": "x2rFNW6kaQvhpHHo",
+          "id": "acc73c775e12f0cc",
           "name": "Telegram Bot"
         }
       }
@@ -558,12 +558,12 @@
     "templateCredsSetupCompleted": true,
     "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
   },
-  "id": "Zn5fpAlt25YlfYHq",
+  "id": "0ee4a8de85edc7f4",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "0ruZiTR1YLmoPrmY",
+      "id": "85a9be753decefce",
       "name": "My Blog"
     }
   ]

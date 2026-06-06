@@ -29,7 +29,7 @@
       ],
       "credentials": {
         "s3": {
-          "id": "13a1a9ce31b786e2",
+          "id": "YOUR_S3_CREDENTIAL_ID",
           "name": "my-blog S3 account"
         }
       }
@@ -73,7 +73,7 @@
       "alwaysOutputData": true,
       "credentials": {
         "supabaseApi": {
-          "id": "797f34275d445ea8",
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
           "name": "my-blog-database"
         }
       }
@@ -300,17 +300,17 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "6bafc6e6-1749-4c9b-a4e5-d5405901dea7",
+  "versionId": "",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+    "instanceId": ""
   },
-  "id": "48ad51658a508fdc",
+  "id": "",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "85a9be753decefce",
+      "id": "",
       "name": "My Blog"
     }
   ]

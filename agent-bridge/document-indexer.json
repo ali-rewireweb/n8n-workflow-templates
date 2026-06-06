@@ -1,0 +1,607 @@
+{
+  "name": "Document Indexer",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT TO_CHAR(COALESCE(MAX(indexed_at), '2000-01-01 00:00:00'::timestamp), 'YYYY-MM-DD HH24:MI:SS') AS last_run FROM document_index",
+        "options": {}
+      },
+      "id": "d0625162-033e-4d18-9d03-3cfb8c4d3103",
+      "name": "Get Last Run Timestamp",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1648,
+        1056
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "EsjSRLgiccfzzhIT",
+          "name": "Document Index (pgvector)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT sdv.id, od.name AS doc_name, sdv.file_path, sdv.original_name, sdv.version_name FROM simple_document_versions sdv JOIN organizational_documents od ON od.id = sdv.document_id WHERE sdv.is_active = 1 AND od.type = 'file' AND (sdv.updated_at > '{{ $json.last_run }}' OR sdv.created_at > '{{ $json.last_run }}') ORDER BY sdv.id ASC",
+        "options": {}
+      },
+      "id": "c97e499f-a363-489c-a1ca-1f5e1c372892",
+      "name": "Fetch Changed Docs",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        -1408,
+        912
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "hxCXUjnv2weT6LUj",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT source_doc_id FROM document_index",
+        "options": {}
+      },
+      "id": "a69cea83-bfb0-4f88-a432-4f307fa79cc7",
+      "name": "Get All Postgres IDs",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -1408,
+        1232
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "EsjSRLgiccfzzhIT",
+          "name": "Document Index (pgvector)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const ids = $input.all()\n  .map(i => parseInt(i.json.source_doc_id))\n  .filter(id => !isNaN(id));\nreturn [{ json: { postgres_ids: ids } }];"
+      },
+      "id": "3bc1d19a-3b92-4479-9135-7ea5a6f08d0c",
+      "name": "Collect Postgres IDs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT sdv.id FROM simple_document_versions sdv JOIN organizational_documents od ON od.id = sdv.document_id WHERE sdv.is_active = 1 AND od.type = 'file'",
+        "options": {}
+      },
+      "id": "8a5924d7-437c-4e2e-9276-615565c03df3",
+      "name": "Get All MySQL IDs",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        -960,
+        1232
+      ],
+      "credentials": {
+        "mySql": {
+          "id": "hxCXUjnv2weT6LUj",
+          "name": "MySQL account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// postgres_ids: every source_doc_id currently in the index\n// $input.all(): every currently active doc in MySQL\n// orphans = IDs that are indexed but no longer exist in MySQL\n\nconst postgresIds = $('Collect Postgres IDs').first().json.postgres_ids;\n\nconst mysqlIds = new Set(\n  $input.all()\n    .map(i => parseInt(i.json.id))\n    .filter(id => !isNaN(id))\n);\n\nconst orphans = postgresIds.filter(id => !mysqlIds.has(id));\n\nreturn [{ json: { orphans, count: orphans.length } }];"
+      },
+      "id": "c879f3b4-b71b-4ca1-a6e1-512813b55701",
+      "name": "Compute Orphans",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -736,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "orphan-cond-001",
+              "leftValue": "={{ $json.count }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "3af88588-23e4-4200-b818-64a67d69c1fd",
+      "name": "IF Has Orphans",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -512,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "DELETE FROM document_index WHERE source_doc_id = ANY(ARRAY[{{ $json.orphans.join(',') }}]::int[])",
+        "options": {}
+      },
+      "id": "b0beaf28-d9d1-41ed-8441-ae3cb6d56063",
+      "name": "Delete Orphans",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        -288,
+        1232
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "EsjSRLgiccfzzhIT",
+          "name": "Document Index (pgvector)"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -1872,
+        1056
+      ],
+      "id": "f8276af2-37df-4c2f-bce2-d4f40100276a",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "701f8ab7-915b-4234-b7b5-67725654757f",
+      "name": "Loop Over Docs1",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1184,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const STORAGE_BASE = 'https://ai-rooster.nl/storage/';\nconst item = $input.first().json;\n\nreturn [{\n  json: {\n    source_doc_id: item.id,\n    doc_name: item.doc_name,\n    filename: item.original_name || item.doc_name,\n    url: STORAGE_BASE + item.file_path,\n    user_id: 1\n  }\n}];"
+      },
+      "id": "ad221dab-3df6-4ea7-beaf-b29277cc6fc4",
+      "name": "Build Download URL1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -960,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "076d49cf-2e84-40fb-975b-6ed58b6f8f9b",
+      "name": "Download File1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        912
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "http://kdaw9vesz8b10e381mspmg9r.148.251.86.132.sslip.io/tika",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Accept",
+              "value": "text/plain"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/octet-stream"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "id": "ef4862c2-c1ab-4f6d-a452-0c4e9ab08d0b",
+      "name": "Extract Text (Tika)1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -512,
+        912
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const prev = $('Build Download URL1').first().json;\nconst tikaItem = $input.first();\nconst MAX_CHARS = 8000;\n\nlet text = '';\nconst j = tikaItem.json;\nif (typeof j === 'string') text = j;\nelse if (j && typeof j.data === 'string') text = j.data;\nelse if (j && typeof j.body === 'string') text = j.body;\nelse if (j && typeof j.text === 'string') text = j.text;\nelse if (j) {\n  for (const val of Object.values(j)) {\n    if (typeof val === 'string' && val.length > 10) { text = val; break; }\n  }\n}\n\ntext = text.replace(/\\s+/g, ' ').trim();\nif (text.length > MAX_CHARS) text = text.substring(0, MAX_CHARS);\n\nfunction simpleHash(str) {\n  let hash = 0;\n  for (let i = 0; i < str.length; i++) {\n    const char = str.charCodeAt(i);\n    hash = ((hash << 5) - hash) + char;\n    hash = hash & hash;\n  }\n  return Math.abs(hash).toString(16);\n}\n\nreturn [{\n  json: {\n    source_doc_id: prev.source_doc_id,\n    user_id: prev.user_id,\n    filename: prev.filename,\n    extracted_text: text,\n    checksum: simpleHash(text),\n    text_length: text.length\n  }\n}];"
+      },
+      "id": "81256393-9715-4704-9c29-b7ef7393484e",
+      "name": "Prepare Text1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -288,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "di-cond-001",
+              "leftValue": "={{ $json.text_length }}",
+              "rightValue": 20,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f24a8884-af50-4a79-a88c-eda3383909a4",
+      "name": "IF Has Text1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -64,
+        912
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/embeddings",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "HTTP-Referer",
+              "value": "https://your-app.nl"
+            },
+            {
+              "name": "X-Title",
+              "value": "Your App"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"openai/text-embedding-3-small\",\n  \"input\": {{ JSON.stringify($json.extracted_text) }}\n}",
+        "options": {}
+      },
+      "id": "1736b9fe-88e7-44ef-b142-5e5c7cef37e8",
+      "name": "Generate Embedding1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        768
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const embeddingResp = $input.first().json;\nconst prev = $('Prepare Text1').first().json;\n\nconst embedding = embeddingResp?.data?.[0]?.embedding;\nif (!embedding || !Array.isArray(embedding)) {\n  throw new Error('No embedding returned for doc ' + prev.source_doc_id + '. Response: ' + JSON.stringify(embeddingResp));\n}\n\nconst safeFilename = prev.filename.replace(/'/g, \"''\");\nconst safeText = prev.extracted_text.replace(/\\$dmtag\\$/g, '$dm tag$');\nconst vectorLiteral = '[' + embedding.join(',') + ']';\n\nconst query = [\n  'INSERT INTO document_index',\n  '(source_doc_id, user_id, filename, extracted_text, embedding, indexed_at, checksum)',\n  'VALUES (',\n  `  ${parseInt(prev.source_doc_id)},`,\n  `  ${parseInt(prev.user_id)},`,\n  `  '${safeFilename}',`,\n  `  $dmtag$${safeText}$dmtag$,`,\n  `  '${vectorLiteral}'::vector,`,\n  '  NOW(),',\n  `  '${prev.checksum}'`,\n  ')',\n  'ON CONFLICT (source_doc_id) DO UPDATE SET',\n  '  extracted_text = EXCLUDED.extracted_text,',\n  '  embedding      = EXCLUDED.embedding,',\n  '  indexed_at     = NOW(),',\n  '  checksum       = EXCLUDED.checksum'\n].join('\\n');\n\nreturn [{ json: { query, source_doc_id: prev.source_doc_id, filename: prev.filename } }];"
+      },
+      "id": "cdfa8fc8-911c-4c58-a285-6c7cf37021ff",
+      "name": "Build Upsert Query1",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        384,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.query }}",
+        "options": {}
+      },
+      "id": "a1420b6f-1303-4a46-a463-426db3c2fd43",
+      "name": "Upsert to Postgres1",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.5,
+      "position": [
+        608,
+        768
+      ],
+      "credentials": {
+        "postgres": {
+          "id": "EsjSRLgiccfzzhIT",
+          "name": "Document Index (pgvector)"
+        }
+      },
+      "continueOnFail": true
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Last Run Timestamp": {
+      "main": [
+        [
+          {
+            "node": "Fetch Changed Docs",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get All Postgres IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Changed Docs": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Docs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Postgres IDs": {
+      "main": [
+        [
+          {
+            "node": "Collect Postgres IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Collect Postgres IDs": {
+      "main": [
+        [
+          {
+            "node": "Get All MySQL IDs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All MySQL IDs": {
+      "main": [
+        [
+          {
+            "node": "Compute Orphans",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Orphans": {
+      "main": [
+        [
+          {
+            "node": "IF Has Orphans",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Orphans": {
+      "main": [
+        [
+          {
+            "node": "Delete Orphans",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Get Last Run Timestamp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Docs1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Build Download URL1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Download URL1": {
+      "main": [
+        [
+          {
+            "node": "Download File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download File1": {
+      "main": [
+        [
+          {
+            "node": "Extract Text (Tika)1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text (Tika)1": {
+      "main": [
+        [
+          {
+            "node": "Prepare Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Text1": {
+      "main": [
+        [
+          {
+            "node": "IF Has Text1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Has Text1": {
+      "main": [
+        [
+          {
+            "node": "Generate Embedding1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Docs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Embedding1": {
+      "main": [
+        [
+          {
+            "node": "Build Upsert Query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Upsert Query1": {
+      "main": [
+        [
+          {
+            "node": "Upsert to Postgres1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert to Postgres1": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Docs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "19e433c9-aa80-4428-8c48-7bbcb2ee368c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8475a67cf1073f0652dbf96ae8c5dd7fce0316031a177943552e3338797e4512"
+  },
+  "id": "Za3cHjQVlndNKHDK",
+  "tags": []
+}

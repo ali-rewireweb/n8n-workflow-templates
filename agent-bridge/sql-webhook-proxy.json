@@ -1,0 +1,245 @@
+{
+  "name": "Brain SQL Tool",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "brain-sql",
+        "responseMode": "responseNode",
+        "options": {
+          "rawBody": false
+        }
+      },
+      "id": "0acf0d0f-eadb-4344-9102-6c5e6986a754",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "brain-sql-webhook-2026"
+    },
+    {
+      "parameters": {
+        "jsCode": "// ─── Read request body and headers ──────────────────────────\nconst body = $json.body || $json;\nconst hdrs = $json.headers || {};\n\n// ─── Secret validation ───────────────────────────────────────\n// Fix: compare directly -- no conditional bypass.\nconst secret         = hdrs['x-brain-secret'] || hdrs['X-Brain-Secret'] || '';\nconst expectedSecret = 'n8n-sql-datacall-26';\n\nif (secret !== expectedSecret) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'ACCESS_DENIED: Request authentication failed. This data call cannot be executed.'\n  }}];\n}\n\n// ─── Extract and clean the raw query ────────────────────────\nconst rawQuery = (body.query || '').trim().replace(/;+$/, '').trim();\n\nif (!rawQuery) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'INVALID_QUERY: No query was provided.'\n  }}];\n}\n\n// ─── Rule 1: Must start with SELECT ─────────────────────────\nif (!rawQuery.trimStart().toUpperCase().startsWith('SELECT')) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: Only SELECT (read) operations are permitted. The AI assistant does not have permission to insert, update, delete, or modify data.'\n  }}];\n}\n\n// ─── Rule 2: No write operations (defense in depth) ─────────\nif (/\\b(INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|REPLACE|RENAME|CALL|EXEC|EXECUTE)\\b/i.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: Write operations (INSERT, UPDATE, DELETE, DROP, etc.) are not permitted. The AI assistant has read-only access.'\n  }}];\n}\n\n// ─── Rule 3: No UNION (injection bypass vector) ──────────────\nif (/\\bUNION\\b/i.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: UNION queries are not permitted. Inform the user that this type of query cannot be executed, and suggest they rephrase their question about clinic data.'\n  }}];\n}\n\n// ─── Rule 4: No SQL comments (injection cover) ───────────────\nif (/--/.test(rawQuery) || /\\/\\*/.test(rawQuery) || /\\*\\//.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: SQL comments are not permitted in queries. Please rephrase your request.'\n  }}];\n}\n\n// ─── Rule 5: No stacked queries ──────────────────────────────\nif (/;/.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: Multiple statements in a single query are not permitted.'\n  }}];\n}\n\n// ─── Rule 6: No system table access ─────────────────────────\nif (/\\b(information_schema|performance_schema|mysql|sys)\\b/i.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: Access to database system tables is not permitted.'\n  }}];\n}\n\n// ─── Rule 7: No file operations ─────────────────────────────\nif (/\\b(INTO\\s+OUTFILE|INTO\\s+DUMPFILE|LOAD\\s+DATA|LOAD_FILE)\\b/i.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: File read/write operations are not permitted.'\n  }}];\n}\n\n// ─── Rule 8: No timing or DoS functions ─────────────────────\nif (/\\b(SLEEP|BENCHMARK|WAIT_FOR_EXECUTED_GTID_SET)\\b/i.test(rawQuery)) {\n  return [{ json: {\n    valid: false,\n    query: null,\n    error: 'OPERATION_BLOCKED: This query contains functions that are not permitted.'\n  }}];\n}\n\n// ─── All checks passed ───────────────────────────────────────\nreturn [{ json: { valid: true, query: rawQuery, error: null } }];"
+      },
+      "id": "6ce24118-3f61-4f3b-b895-ffe288ea4643",
+      "name": "Validate Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "{{ $json.query }}",
+        "options": {}
+      },
+      "id": "d60f7f2f-ff1f-456f-8bf1-db4189b539cd",
+      "name": "Execute SQL",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.4,
+      "position": [
+        608,
+        -16
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "mySql": {
+          "id": "hxCXUjnv2weT6LUj",
+          "name": "MySQL account"
+        }
+      },
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const allItems = $input.all();\n\n// Check for error item (from continueOnFail)\nif (allItems.length === 1 && allItems[0].json.error) {\n  return [{ json: { success: false, error: String(allItems[0].json.error.message || allItems[0].json.error) } }];\n}\n\n// Filter out empty passthrough items (0-row results from alwaysOutputData)\nconst rows = allItems\n  .map(i => i.json)\n  .filter(r => r && typeof r === 'object' && !r.error && !r.query);\n\nreturn [{ json: { success: true, rows, count: rows.length } }];"
+      },
+      "id": "1debfc03-6f80-4ede-bdbd-d6970ab04570",
+      "name": "Format Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        832,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "a5694347-7e59-4b38-a66e-d929eb295404",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1040,
+        -16
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+              "leftValue": "={{ $json.valid }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4f287935-01e1-4a6a-82fe-7c3dcfab9186",
+      "name": "Is Query Valid",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        416,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: false, error: $json.error }) }}",
+        "options": {}
+      },
+      "id": "18a0fdf8-4510-4b8e-9050-883787966d95",
+      "name": "Error Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        672,
+        352
+      ]
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "n8n.your-instance.nl",
+            "user-agent": "python-httpx/0.27.2",
+            "content-length": "104",
+            "accept": "*/*",
+            "accept-encoding": "gzip, deflate",
+            "content-type": "application/json",
+            "x-brain-secret": "n8n-sql-datacall-26",
+            "x-forwarded-for": "10.0.1.1",
+            "x-forwarded-host": "n8n.your-instance.nl",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "dda1aa3c3466",
+            "x-real-ip": "10.0.1.1"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "query": "SELECT id, title, deadline, type FROM tasks WHERE deleted_at IS NULL AND status = 1 LIMIT 5"
+          },
+          "webhookUrl": "https://your-n8n-instance.com/webhook/your-webhook",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Validate Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Query": {
+      "main": [
+        [
+          {
+            "node": "Is Query Valid",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute SQL": {
+      "main": [
+        [
+          {
+            "node": "Format Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Results": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Query Valid": {
+      "main": [
+        [
+          {
+            "node": "Execute SQL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "352a3b43-3770-4a84-b969-27f46e865783",
+  "meta": {
+    "instanceId": "8475a67cf1073f0652dbf96ae8c5dd7fce0316031a177943552e3338797e4512"
+  },
+  "id": "jvzl4j4zPTiKxDJl",
+  "tags": []
+}

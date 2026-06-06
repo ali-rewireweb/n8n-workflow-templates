@@ -1,0 +1,111 @@
+{
+  "name": "Rewireweb Website Subscribers",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "1a3251b9-69a0-4000-b904-25598db63777",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "id": "2736b5cc-da6d-4ad0-8a73-0f6bccd991b5",
+      "name": "Webhook",
+      "webhookId": "1a3251b9-69a0-4000-b904-25598db63777"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1KyddYcp_Zg1Sar_YmYjGHktaCEKwN15upBn8zCpHgLE/edit?usp=sharing",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1KyddYcp_Zg1Sar_YmYjGHktaCEKwN15upBn8zCpHgLE/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Email": "={{ $json.body.email }}"
+          },
+          "matchingColumns": [
+            "Email"
+          ],
+          "schema": [
+            {
+              "id": " id",
+              "displayName": " id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.6,
+      "position": [
+        224,
+        0
+      ],
+      "id": "fb768be6-8c8e-4158-84ef-a139062a7231",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "2h6qogULXrp6HZhP",
+          "name": "Google Sheets account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2693d07b-937c-47e4-9352-41321bf97fed",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+  },
+  "id": "Gx1UmNfPbyPnyLLZ",
+  "tags": []
+}

@@ -1,0 +1,581 @@
+{
+  "name": "My Blog - 1B - Post Generator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 6
+            }
+          ]
+        }
+      },
+      "id": "cf985802-531c-477a-863c-30136129e7d3",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1728,
+        -496
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "19265156-0837-49a8-8158-80c1a697b44c",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1728,
+        -288
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://YOUR_PROJECT_REF.supabase.co/rest/v1/articles",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "processed",
+              "value": "eq.false"
+            },
+            {
+              "name": "select",
+              "value": "id,filename,content"
+            },
+            {
+              "name": "order",
+              "value": "created_at.asc"
+            },
+            {
+              "name": "limit",
+              "value": "1"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_SUPABASE_KEY.3rl1d_EbmsbUGHNuTtpUX70f1f00mWTSVFTK6KaU1X0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c65e802e-b0a7-4a9a-af74-34b9477d2f86",
+      "name": "Get Next Article",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1504,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "id": "cond-article",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "number",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "looseTypeValidation": true
+        }
+      },
+      "id": "153cc315-d91b-46ef-becf-f163f55cec51",
+      "name": "Has Article?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -1280,
+        -400
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Article ID: {{ $json.id }}\nFilename: {{ $json.filename }}\n\nArticle content:\n{{ $json.content }}\n\nGenerate exactly 3 Facebook post variations from this article. Each one must approach the topic from a different angle so they do not feel like duplicates of each other.",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a senior social media writer for My Blog, a B2B IPTV M3U content supplier. My Blog sells connection-based playlist access to IPTV resellers, service providers, and entrepreneurs running IPTV businesses.\n\nABSOLUTE POSITIONING (never contradict):\n- My Blog is backend only. We supply M3U playlist files.\n- We do NOT sell direct IPTV subscriptions to end users.\n- We do NOT operate IPTV panels.\n- We do NOT provide restreaming services.\n- We never compete with our resellers for their customers.\n\nVOICE:\n- Direct, knowledgeable, practical. Like a real industry insider, not a marketer.\n- Use contractions naturally (you're, it's, that's, don't).\n- Speak to IPTV resellers and entrepreneurs in second person.\n- Mix short punchy sentences with longer explanatory ones.\n- Concrete details over vague statements.\n- One genuine opinion or mild editorial line per post is welcome.\n\nBANNED PHRASES (do not use, ever): game-changer, leverage, seamlessly, cutting-edge, in today's fast-paced world, delve, unlock, in the realm of, it's worth noting that, navigate the landscape.\n\nCRITICAL FORMATTING: NEVER use an em dash character. Not anywhere. Use commas, periods, parentheses, or split the sentence. This is a hard rule.\n\nTASK:\nFrom the article provided, produce exactly 3 Facebook post variations. Each must take a different angle, for example:\n1. A pain-point or problem hook (call out something resellers struggle with)\n2. A tactical tip or insight (something practical they can act on)\n3. A direct value pitch or contrarian take (challenge a common assumption)\n\nFor each post, also generate a detailed AI image prompt. The image must:\n- Be photorealistic OR clean flat or isometric illustration (pick one and specify)\n- Have NO text in it\n- Avoid stock-photo cliches (no generic handshakes, no glowing earths, no people in suits pointing at screens)\n- Match the angle of that specific post\n- Specify style, color palette, and mood\n\nReturn strictly valid JSON matching the provided schema. No commentary outside the JSON."
+        }
+      },
+      "id": "84b77e3e-5678-4822-812b-9de9c2e72c80",
+      "name": "Generate Social Posts",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        -1056,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "openai/gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "openai/gpt-4.1-mini"
+        },
+        "options": {
+          "temperature": 0.7
+        }
+      },
+      "id": "b268cbd3-0068-4d47-8dbd-140e4c5b7c30",
+      "name": "Posts Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        -1072,
+        -272
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "vZjIzXDdiIv2jNjc",
+          "name": "OpenAI API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"posts\": {\n      \"type\": \"array\",\n      \"minItems\": 3,\n      \"maxItems\": 3,\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"post_index\": {\n            \"type\": \"integer\",\n            \"minimum\": 1,\n            \"maximum\": 3,\n            \"description\": \"Post number 1, 2, or 3\"\n          },\n          \"angle\": {\n            \"type\": \"string\",\n            \"description\": \"Short label like 'pain-point hook', 'tactical tip', 'contrarian take'\"\n          },\n          \"post_copy\": {\n            \"type\": \"string\",\n            \"description\": \"Full Facebook post text, 250 to 500 characters. No em dashes. No banned phrases.\"\n          },\n          \"hashtags\": {\n            \"type\": \"array\",\n            \"items\": { \"type\": \"string\" },\n            \"description\": \"3 to 5 relevant hashtags without the # symbol\"\n          },\n          \"image_prompt\": {\n            \"type\": \"string\",\n            \"description\": \"Detailed image generation prompt. Specify style (photorealistic or flat or isometric), color palette, and mood. No text in image. No cliches.\"\n          }\n        },\n        \"required\": [\"post_index\", \"angle\", \"post_copy\", \"image_prompt\", \"hashtags\"]\n      }\n    }\n  },\n  \"required\": [\"posts\"]\n}"
+      },
+      "id": "880b9c2b-69c0-404c-84eb-27bda1f9c965",
+      "name": "Posts Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -896,
+        -304
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "output.posts",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "id": "25e89c72-d025-4c05-a0bf-ae558add0bb2",
+      "name": "Split Posts",
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -784,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const articleId = $('Get Next Article').first().json.id;\nconst items = $input.all();\n\nreturn items.map(item => {\n  // Split Out with a dotted path puts the data under a literal \"output.posts\" key.\n  // Fall back to other shapes just in case.\n  const post = item.json[\"output.posts\"]\n            || item.json.output?.posts\n            || item.json;\n\n  const hashtagLine = (post.hashtags && post.hashtags.length)\n    ? '\\n\\n' + post.hashtags.map(h => '#' + h).join(' ')\n    : '';\n\n  const filename = `article-${articleId}-post-${post.post_index}-${Date.now()}.png`;\n\n  return {\n    json: {\n      article_id: articleId,\n      post_index: post.post_index,\n      angle: post.angle,\n      post_copy: (post.post_copy || '') + hashtagLine,\n      image_prompt: post.image_prompt,\n      image_filename: filename\n    }\n  };\n});"
+      },
+      "id": "8ce61c29-14d2-4fc6-b1b7-24dbad5368c0",
+      "name": "Prepare Post Fields",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -608,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e22d0b37-0eb3-4459-b171-b7c6a8e41e54",
+      "name": "Loop One At A Time",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -384,
+        -496
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "8lIJmo3ZH3ZnOP4d",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/8lIJmo3ZH3ZnOP4d",
+          "cachedResultName": "My Blog - 1C - Image Subworkflow"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "prompt": "={{ $json.image_prompt }}",
+            "filename": "={{ $json.image_filename }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "prompt",
+              "displayName": "prompt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            },
+            {
+              "id": "filename",
+              "displayName": "filename",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "id": "e73856ec-a2ba-4e9c-bcd3-15102d98a687",
+      "name": "Generate Image (Subflow)",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        -160,
+        -624
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_PROJECT_REF.supabase.co/rest/v1/facebook_posts",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_SUPABASE_KEY.3rl1d_EbmsbUGHNuTtpUX70f1f00mWTSVFTK6KaU1X0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=representation"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ article_id: $('Loop One At A Time').item.json.article_id, post_copy: $('Loop One At A Time').item.json.post_copy, image_prompt: $json.image_prompt, image_url: $json.image_url, image_filename: $json.image_filename, status: 'pending' }) }}",
+        "options": {}
+      },
+      "id": "20ae7136-baf4-4f4d-84e3-6895ba1e47ae",
+      "name": "Insert Facebook Post",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        64,
+        -592
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const dbResponse = $json;\nconst inserted = Array.isArray(dbResponse) ? dbResponse[0] : dbResponse;\nconst loopItem = $('Loop One At A Time').item.json;\n\nreturn {\n  json: {\n    post_id: inserted.id,\n    article_id: inserted.article_id,\n    post_copy: inserted.post_copy,\n    image_url: inserted.image_url,\n    angle: loopItem.angle,\n    post_index: loopItem.post_index\n  }\n};"
+      },
+      "id": "7b7c5b85-3895-487d-8008-c2756b04214d",
+      "name": "Parse Insert Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        288,
+        -592
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/sendPhoto",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: '-1003876909621', photo: $json.image_url, caption: '🆔 Post ID: ' + String($json.post_id) + '\\n🎯 Angle: ' + String($json.angle) + ' (#' + String($json.post_index) + ' of 3)\\n\\n' + String($json.post_copy), reply_markup: { inline_keyboard: [[ { text: '✅ Approve', callback_data: 'approve_' + String($json.post_id) }, { text: '❌ Reject', callback_data: 'reject_' + String($json.post_id) } ]] } }) }}",
+        "options": {}
+      },
+      "id": "b7afa90a-d3dd-400d-a6bc-fa219ee7f128",
+      "name": "Send Telegram Approval",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        512,
+        -592
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://YOUR_PROJECT_REF.supabase.co/rest/v1/articles?id=eq.{{ $('Get Next Article').item.json.id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_SUPABASE_KEY.3rl1d_EbmsbUGHNuTtpUX70f1f00mWTSVFTK6KaU1X0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ processed: true }) }}",
+        "options": {}
+      },
+      "id": "3072dfcd-6f78-4365-b91f-c817d68348bc",
+      "name": "Mark Article Processed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -176,
+        -336
+      ]
+    }
+  ],
+  "pinData": {
+    "Schedule Trigger": [
+      {
+        "json": {
+          "timestamp": "2026-05-18T21:06:09.306+02:00",
+          "Readable date": "May 18th 2026, 9:06:09 pm",
+          "Readable time": "9:06:09 pm",
+          "Day of week": "Monday",
+          "Year": "2026",
+          "Month": "May",
+          "Day of month": "18",
+          "Hour": "21",
+          "Minute": "06",
+          "Second": "09",
+          "Timezone": "Europe/Berlin (UTC+02:00)"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Next Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Next Article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Next Article": {
+      "main": [
+        [
+          {
+            "node": "Has Article?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Article?": {
+      "main": [
+        [
+          {
+            "node": "Generate Social Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Social Posts": {
+      "main": [
+        [
+          {
+            "node": "Split Posts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Posts Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Social Posts",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Posts Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate Social Posts",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Posts": {
+      "main": [
+        [
+          {
+            "node": "Prepare Post Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Post Fields": {
+      "main": [
+        [
+          {
+            "node": "Loop One At A Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop One At A Time": {
+      "main": [
+        [
+          {
+            "node": "Mark Article Processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Generate Image (Subflow)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image (Subflow)": {
+      "main": [
+        [
+          {
+            "node": "Insert Facebook Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Facebook Post": {
+      "main": [
+        [
+          {
+            "node": "Parse Insert Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Insert Result": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Approval",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Approval": {
+      "main": [
+        [
+          {
+            "node": "Loop One At A Time",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "7f479693-2497-4534-82e6-31b150b25855",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+  },
+  "id": "Y4iu34v1nHzIs1We",
+  "tags": [
+    {
+      "updatedAt": "2026-05-14T05:01:48.735Z",
+      "createdAt": "2026-05-14T05:01:48.735Z",
+      "id": "0ruZiTR1YLmoPrmY",
+      "name": "My Blog"
+    }
+  ]
+}

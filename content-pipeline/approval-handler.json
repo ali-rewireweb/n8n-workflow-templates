@@ -1,0 +1,570 @@
+{
+  "name": "My Blog - 2 - Approval Handler",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "id": "9a3b0b27-bcd4-4c89-985c-9997c056fd0f",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -2400,
+        0
+      ],
+      "webhookId": "my-blog-approval-v2",
+      "credentials": {
+        "telegramApi": {
+          "id": "x2rFNW6kaQvhpHHo",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const update = $input.item.json;\nconst cb = update.callback_query;\nif (!cb) throw new Error('Not a callback_query. Got: ' + JSON.stringify(Object.keys(update)));\n\nconst data = cb.data || '';\nconst sep = data.indexOf('_');\nif (sep === -1) throw new Error('Invalid callback format: ' + data);\n\nconst action = data.substring(0, sep);\nconst postId = Number(data.substring(sep + 1));\nif (!action || !postId) throw new Error('Could not parse from: ' + data);\n\nconst chatId = cb.message && cb.message.chat ? String(cb.message.chat.id) : '-1003876909621';\n\nreturn { json: { action, post_id: postId, callback_query_id: cb.id, chat_id: chatId } };"
+      },
+      "id": "bbe00cb5-bbef-42c4-95ec-8f76fa960a0c",
+      "name": "Parse Callback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2176,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://YOUR_PROJECT_REF.supabase.co/rest/v1/facebook_posts?id=eq.{{ $json.post_id }}&select=id,post_copy,image_url,article_id",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_SUPABASE_KEY.3rl1d_EbmsbUGHNuTtpUX70f1f00mWTSVFTK6KaU1X0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "28e020ef-a0a1-41eb-b50e-5ca85e46394e",
+      "name": "Get Post from DB",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1968,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const cb = $('Parse Callback').item.json;\nconst raw = $input.item.json;\nconst post = Array.isArray(raw) ? raw[0] : raw;\nif (!post || !post.id) throw new Error('Post not found for id: ' + cb.post_id);\nreturn { json: { action: cb.action, post_id: post.id, post_copy: post.post_copy, image_url: post.image_url, callback_query_id: cb.callback_query_id, chat_id: cb.chat_id } };"
+      },
+      "id": "06006294-f69c-4573-9d68-9274f75c2a38",
+      "name": "Merge Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1744,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "rule-approve",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "approve",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Approve"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "rule-reject",
+                    "leftValue": "={{ $json.action }}",
+                    "rightValue": "reject",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Reject"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1b1d013c-a257-4617-b672-97cbd6823ae1",
+      "name": "Approve or Reject",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        -1520,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.buffer.com",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: \"mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { ... on PostActionSuccess { post { id text dueAt status } } ... on MutationError { message } } }\", variables: { input: { text: $json.post_copy, channelId: \"6a053c3e090476fb9919e6a7\", schedulingType: \"automatic\", mode: \"addToQueue\", assets: [{ image: { url: $json.image_url } }], metadata: { facebook: { type: \"post\" } }, saveToDraft: true } } }) }}",
+        "options": {}
+      },
+      "id": "3e83d466-97d3-4730-acd6-8a98542a8971",
+      "name": "Post to Buffer",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1296,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://YOUR_PROJECT_REF.supabase.co/rest/v1/facebook_posts?id=eq.{{ $('Merge Data').item.json.post_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_SUPABASE_KEY.3rl1d_EbmsbUGHNuTtpUX70f1f00mWTSVFTK6KaU1X0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'posted', buffer_post_id: $json.data?.createPost?.post?.id || 'queued', posted_at: new Date().toISOString(), updated_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "9fd1b09a-94f3-4de6-8cc7-0107d5155a94",
+      "name": "Mark as Posted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1088,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/answerCallbackQuery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callback_query_id: $('Merge Data').item.json.callback_query_id, text: 'Sent to Buffer!' }) }}",
+        "options": {}
+      },
+      "id": "0ea2365c-b4a0-4731-ae58-629260f29823",
+      "name": "Answer Callback Approve",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -864,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $('Merge Data').item.json.chat_id, text: '\\u2705 Posted to Facebook\\nPost ID: ' + String($('Merge Data').item.json.post_id) }) }}",
+        "options": {}
+      },
+      "id": "4832c949-a4a0-44ee-a2f8-4f97a69c9655",
+      "name": "Confirm Posted",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -640,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://YOUR_PROJECT_REF.supabase.co/rest/v1/facebook_posts?id=eq.{{ $json.post_id }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.YOUR_SUPABASE_KEY.3rl1d_EbmsbUGHNuTtpUX70f1f00mWTSVFTK6KaU1X0"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ status: 'rejected', updated_at: new Date().toISOString() }) }}",
+        "options": {}
+      },
+      "id": "0c2bfe76-5553-4928-ba34-d40a9cdf309b",
+      "name": "Mark as Rejected",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1296,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/answerCallbackQuery",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ callback_query_id: $('Merge Data').item.json.callback_query_id, text: 'Rejected.' }) }}",
+        "options": {}
+      },
+      "id": "16e5ef0e-ab9b-4d8d-bb6e-c82218725b6a",
+      "name": "Answer Callback Reject",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1088,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/sendMessage",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ chat_id: $('Merge Data').item.json.chat_id, text: '\\u274C Rejected - Post ID: ' + String($('Merge Data').item.json.post_id) }) }}",
+        "options": {}
+      },
+      "id": "da063a27-f4e3-4228-802b-bef6141f7390",
+      "name": "Confirm Rejected",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -864,
+        160
+      ]
+    }
+  ],
+  "pinData": {
+    "Telegram Trigger": [
+      {
+        "json": {
+          "update_id": 758407065,
+          "callback_query": {
+            "id": "2164379692743155114",
+            "from": {
+              "id": 6946384860,
+              "is_bot": false,
+              "first_name": "Abdelrahman",
+              "last_name": "Mohamed",
+              "username": "a_alimohamed",
+              "language_code": "en"
+            },
+            "message": {
+              "message_id": 28,
+              "sender_chat": {
+                "id": -1003876909621,
+                "title": "lukkybot",
+                "type": "channel"
+              },
+              "chat": {
+                "id": -1003876909621,
+                "title": "lukkybot",
+                "type": "channel"
+              },
+              "date": 1779136440,
+              "photo": [
+                {
+                  "file_id": "AgACAgQAAyEGAATnFPI1AAMcagt3uMEMSs9svdh16WoTL2GHak4AAqcPaxsan1xQ6immLB3iKFABAAMCAANzAAM7BA",
+                  "file_unique_id": "AQADpw9rGxqfXFB4",
+                  "file_size": 2186,
+                  "width": 90,
+                  "height": 90
+                },
+                {
+                  "file_id": "AgACAgQAAyEGAATnFPI1AAMcagt3uMEMSs9svdh16WoTL2GHak4AAqcPaxsan1xQ6immLB3iKFABAAMCAANtAAM7BA",
+                  "file_unique_id": "AQADpw9rGxqfXFBy",
+                  "file_size": 28872,
+                  "width": 320,
+                  "height": 320
+                },
+                {
+                  "file_id": "AgACAgQAAyEGAATnFPI1AAMcagt3uMEMSs9svdh16WoTL2GHak4AAqcPaxsan1xQ6immLB3iKFABAAMCAAN4AAM7BA",
+                  "file_unique_id": "AQADpw9rGxqfXFB9",
+                  "file_size": 117174,
+                  "width": 800,
+                  "height": 800
+                },
+                {
+                  "file_id": "AgACAgQAAyEGAATnFPI1AAMcagt3uMEMSs9svdh16WoTL2GHak4AAqcPaxsan1xQ6immLB3iKFABAAMCAAN5AAM7BA",
+                  "file_unique_id": "AQADpw9rGxqfXFB-",
+                  "file_size": 167599,
+                  "width": 1024,
+                  "height": 1024
+                }
+              ],
+              "caption": "🆔 Post ID: 14\n🎯 Angle: pain-point hook (#1 of 3)\n\nStruggling to find IPTV markets with real revenue potential? Look at Germany. With over 93% broadband access and exclusive Bundesliga IPTV rights held by Deutsche Telekom, this market is about quality and high-value subscribers, not just volume. If you’re chasing low prices, you’re missing out on where the real margins are. Focus on premium content, stable feeds, and you’ll tap into a high-ARPU goldmine.\n\n#IPTV #Germany #ARPU #Bundesliga #Reselling",
+              "caption_entities": [
+                {
+                  "offset": 461,
+                  "length": 5,
+                  "type": "hashtag"
+                },
+                {
+                  "offset": 467,
+                  "length": 8,
+                  "type": "hashtag"
+                },
+                {
+                  "offset": 476,
+                  "length": 5,
+                  "type": "hashtag"
+                },
+                {
+                  "offset": 482,
+                  "length": 11,
+                  "type": "hashtag"
+                },
+                {
+                  "offset": 494,
+                  "length": 10,
+                  "type": "hashtag"
+                }
+              ],
+              "reply_markup": {
+                "inline_keyboard": [
+                  [
+                    {
+                      "text": "✅ Approve",
+                      "callback_data": "approve_14"
+                    },
+                    {
+                      "text": "❌ Reject",
+                      "callback_data": "reject_14"
+                    }
+                  ]
+                ]
+              }
+            },
+            "chat_instance": "837784564934716779",
+            "data": "approve_14"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Parse Callback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Callback": {
+      "main": [
+        [
+          {
+            "node": "Get Post from DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Post from DB": {
+      "main": [
+        [
+          {
+            "node": "Merge Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge Data": {
+      "main": [
+        [
+          {
+            "node": "Approve or Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approve or Reject": {
+      "main": [
+        [
+          {
+            "node": "Post to Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark as Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post to Buffer": {
+      "main": [
+        [
+          {
+            "node": "Mark as Posted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Posted": {
+      "main": [
+        [
+          {
+            "node": "Answer Callback Approve",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Callback Approve": {
+      "main": [
+        [
+          {
+            "node": "Confirm Posted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark as Rejected": {
+      "main": [
+        [
+          {
+            "node": "Answer Callback Reject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Callback Reject": {
+      "main": [
+        [
+          {
+            "node": "Confirm Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "070bf2d8-56af-4a59-afac-cf8bd9c44e56",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+  },
+  "id": "Zn5fpAlt25YlfYHq",
+  "tags": [
+    {
+      "updatedAt": "2026-05-14T05:01:48.735Z",
+      "createdAt": "2026-05-14T05:01:48.735Z",
+      "id": "0ruZiTR1YLmoPrmY",
+      "name": "My Blog"
+    }
+  ]
+}

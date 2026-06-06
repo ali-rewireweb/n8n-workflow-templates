@@ -1,0 +1,194 @@
+{
+  "name": "My Blog - 1C - Image Subworkflow",
+  "nodes": [
+    {
+      "parameters": {
+        "workflowInputs": {
+          "values": [
+            {
+              "name": "prompt"
+            },
+            {
+              "name": "filename"
+            }
+          ]
+        }
+      },
+      "id": "e1cb294e-b5fb-4115-8167-34332f940d14",
+      "name": "When Called",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -48,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'gpt-image-2', prompt: $json.prompt, n: 1, size: '1024x1024', quality: 'medium' }) }}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "34da24d1-7856-4fb0-a384-31f404eac69c",
+      "name": "Generate Image (gpt-image-2)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        176,
+        -128
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "zqDg8Uu8eh59Gi2a",
+          "name": "Open AI Images"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const b64 = $json.data[0].b64_json;\nconst filename = $('When Called').first().json.filename;\nconst prompt = $('When Called').first().json.prompt;\n\nif (!b64) {\n  throw new Error('No base64 image returned. Response: ' + JSON.stringify($json).slice(0, 500));\n}\n\nconst buffer = Buffer.from(b64, 'base64');\n\nconst binaryData = await this.helpers.prepareBinaryData(\n  buffer,\n  filename,\n  'image/png'\n);\n\nreturn {\n  binary: {\n    data: binaryData\n  },\n  json: {\n    filename: filename,\n    prompt: prompt,\n    size_bytes: buffer.length\n  }\n};"
+      },
+      "id": "90ff4659-4b04-4e3f-85a7-125c0a3808fa",
+      "name": "Decode Base64 To Binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "post-images",
+        "fileName": "={{ $json.filename }}",
+        "additionalFields": {
+          "acl": "publicRead"
+        },
+        "tagsUi": {
+          "tagsValues": []
+        }
+      },
+      "id": "1c595a60-d563-4217-9dec-dd1aed1faf99",
+      "name": "Upload To Supabase Storage",
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        624,
+        -128
+      ],
+      "credentials": {
+        "s3": {
+          "id": "MmoouGoIkr4q5gke",
+          "name": "my-blog S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const filename = $('Decode Base64 To Binary').first().json.filename;\nconst prompt = $('Decode Base64 To Binary').first().json.prompt;\nconst publicUrl = `https://YOUR_PROJECT_REF.supabase.co/storage/v1/object/public/post-images/${filename}`;\n\nreturn {\n  json: {\n    image_url: publicUrl,\n    image_filename: filename,\n    image_prompt: prompt,\n    success: true\n  }\n};"
+      },
+      "id": "fc6fbf87-7949-4cc2-8593-196aa82210c6",
+      "name": "Build Public URL",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        848,
+        -128
+      ]
+    }
+  ],
+  "pinData": {
+    "When Called": [
+      {
+        "json": {
+          "prompt": null,
+          "filename": null
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "When Called": {
+      "main": [
+        [
+          {
+            "node": "Generate Image (gpt-image-2)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Image (gpt-image-2)": {
+      "main": [
+        [
+          {
+            "node": "Decode Base64 To Binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decode Base64 To Binary": {
+      "main": [
+        [
+          {
+            "node": "Upload To Supabase Storage",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload To Supabase Storage": {
+      "main": [
+        [
+          {
+            "node": "Build Public URL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "72390a92-74d0-4462-8852-441be505095a",
+  "meta": {
+    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+  },
+  "id": "8lIJmo3ZH3ZnOP4d",
+  "tags": [
+    {
+      "updatedAt": "2026-05-14T05:01:48.735Z",
+      "createdAt": "2026-05-14T05:01:48.735Z",
+      "id": "0ruZiTR1YLmoPrmY",
+      "name": "My Blog"
+    }
+  ]
+}

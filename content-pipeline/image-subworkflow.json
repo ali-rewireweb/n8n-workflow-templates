@@ -55,7 +55,7 @@
       ],
       "credentials": {
         "openAiApi": {
-          "id": "f8bd3aa7f976d7a6",
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
           "name": "Open AI Images"
         }
       }
@@ -95,7 +95,7 @@
       ],
       "credentials": {
         "s3": {
-          "id": "13a1a9ce31b786e2",
+          "id": "YOUR_S3_CREDENTIAL_ID",
           "name": "my-blog S3 account"
         }
       }
@@ -178,16 +178,16 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "72390a92-74d0-4462-8852-441be505095a",
+  "versionId": "",
   "meta": {
-    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+    "instanceId": ""
   },
-  "id": "8b0b8f52c5b9a969",
+  "id": "",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "85a9be753decefce",
+      "id": "",
       "name": "My Blog"
     }
   ]

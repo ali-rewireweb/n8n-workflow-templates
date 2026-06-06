@@ -19,7 +19,7 @@
       "webhookId": "my-blog-approval-v2",
       "credentials": {
         "telegramApi": {
-          "id": "acc73c775e12f0cc",
+          "id": "YOUR_TELEGRAM_CREDENTIAL_ID",
           "name": "Telegram Bot"
         }
       }
@@ -27,7 +27,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "const update = $input.item.json;\nconst cb = update.callback_query;\nif (!cb) throw new Error('Not a callback_query. Got: ' + JSON.stringify(Object.keys(update)));\n\nconst data = cb.data || '';\nconst sep = data.indexOf('_');\nif (sep === -1) throw new Error('Invalid callback format: ' + data);\n\nconst action = data.substring(0, sep);\nconst postId = Number(data.substring(sep + 1));\nif (!action || !postId) throw new Error('Could not parse from: ' + data);\n\nconst chatId = cb.message && cb.message.chat ? String(cb.message.chat.id) : '-1003876909621';\n\nreturn { json: { action, post_id: postId, callback_query_id: cb.id, chat_id: chatId } };"
+        "jsCode": "const update = $input.item.json;\nconst cb = update.callback_query;\nif (!cb) throw new Error('Not a callback_query. Got: ' + JSON.stringify(Object.keys(update)));\n\nconst data = cb.data || '';\nconst sep = data.indexOf('_');\nif (sep === -1) throw new Error('Invalid callback format: ' + data);\n\nconst action = data.substring(0, sep);\nconst postId = Number(data.substring(sep + 1));\nif (!action || !postId) throw new Error('Could not parse from: ' + data);\n\nconst chatId = cb.message && cb.message.chat ? String(cb.message.chat.id) : 'YOUR_DEFAULT_CHAT_ID';\n\nreturn { json: { action, post_id: postId, callback_query_id: cb.id, chat_id: chatId } };"
       },
       "id": "bbe00cb5-bbef-42c4-95ec-8f76fa960a0c",
       "name": "Parse Callback",
@@ -163,7 +163,7 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ query: \"mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { ... on PostActionSuccess { post { id text dueAt status } } ... on MutationError { message } } }\", variables: { input: { text: $json.post_copy, channelId: \"6a053c3e090476fb9919e6a7\", schedulingType: \"automatic\", mode: \"addToQueue\", assets: [{ image: { url: $json.image_url } }], metadata: { facebook: { type: \"post\" } }, saveToDraft: true } } }) }}",
+        "jsonBody": "={{ JSON.stringify({ query: \"mutation CreatePost($input: CreatePostInput!) { createPost(input: $input) { ... on PostActionSuccess { post { id text dueAt status } } ... on MutationError { message } } }\", variables: { input: { text: $json.post_copy, channelId: \"YOUR_BUFFER_CHANNEL_ID\", schedulingType: \"automatic\", mode: \"addToQueue\", assets: [{ image: { url: $json.image_url } }], metadata: { facebook: { type: \"post\" } }, saveToDraft: true } } }) }}",
         "options": {}
       },
       "id": "3e83d466-97d3-4730-acd6-8a98542a8971",
@@ -326,23 +326,23 @@
           "callback_query": {
             "id": "2164379692743155114",
             "from": {
-              "id": 6946384860,
+              "id": 1234567890,
               "is_bot": false,
-              "first_name": "Abdelrahman",
-              "last_name": "Mohamed",
-              "username": "a_alimohamed",
+              "first_name": "John",
+              "last_name": "Doe",
+              "username": "johndoe",
               "language_code": "en"
             },
             "message": {
               "message_id": 28,
               "sender_chat": {
-                "id": -1003876909621,
-                "title": "lukkybot",
+                "id": -1000000000000,
+                "title": "mychannel",
                 "type": "channel"
               },
               "chat": {
-                "id": -1003876909621,
-                "title": "lukkybot",
+                "id": -1000000000000,
+                "title": "mychannel",
                 "type": "channel"
               },
               "date": 1779136440,
@@ -419,7 +419,7 @@
                 ]
               }
             },
-            "chat_instance": "837784564934716779",
+            "chat_instance": "1234567890123456789",
             "data": "approve_14"
           }
         },
@@ -553,17 +553,17 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "070bf2d8-56af-4a59-afac-cf8bd9c44e56",
+  "versionId": "",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+    "instanceId": ""
   },
-  "id": "0ee4a8de85edc7f4",
+  "id": "",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "85a9be753decefce",
+      "id": "",
       "name": "My Blog"
     }
   ]

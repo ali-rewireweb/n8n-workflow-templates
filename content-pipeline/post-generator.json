@@ -156,7 +156,7 @@
       ],
       "credentials": {
         "openAiApi": {
-          "id": "c0dddd7e7db56e16",
+          "id": "YOUR_OPENAI_CREDENTIAL_ID",
           "name": "OpenAI API"
         }
       }
@@ -220,9 +220,9 @@
       "parameters": {
         "workflowId": {
           "__rl": true,
-          "value": "8lIJmo3ZH3ZnOP4d",
+          "value": "YOUR_SUBWORKFLOW_ID",
           "mode": "list",
-          "cachedResultUrl": "/workflow/8lIJmo3ZH3ZnOP4d",
+          "cachedResultUrl": "/workflow/YOUR_SUBWORKFLOW_ID",
           "cachedResultName": "My Blog - 1C - Image Subworkflow"
         },
         "workflowInputs": {
@@ -309,7 +309,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const dbResponse = $json;\nconst inserted = Array.isArray(dbResponse) ? dbResponse[0] : dbResponse;\nconst loopItem = $('Loop One At A Time').item.json;\n\nreturn {\n  json: {\n    post_id: inserted.id,\n    article_id: inserted.article_id,\n    post_copy: inserted.post_copy,\n    image_url: inserted.image_url,\n    angle: loopItem.angle,\n    post_index: loopItem.post_index\n  }\n};"
+        "jsCode": "const dbResponse = $json;\nconst inserted = Array.isArray(dbResponse) ? dbResponse[0] : dbResponse;\nconst loopItem = $('Loop One At A Time').item.json;\n\nreturn {\n  json: {\n    post_id: inserted.id,\n    article_id: inserted.article_id,\n    post_copy: inserted.post_copy,\n    image_url: inserted.image_url,\n    angle: loopItem.angle,\n    post_index: loopItem.post_index\n  }\n};\n"
       },
       "id": "7b7c5b85-3895-487d-8008-c2756b04214d",
       "name": "Parse Insert Result",
@@ -326,7 +326,7 @@
         "url": "https://api.telegram.org/botYOUR_TELEGRAM_BOT_TOKEN/sendPhoto",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ JSON.stringify({ chat_id: '-1003876909621', photo: $json.image_url, caption: '🆔 Post ID: ' + String($json.post_id) + '\\n🎯 Angle: ' + String($json.angle) + ' (#' + String($json.post_index) + ' of 3)\\n\\n' + String($json.post_copy), reply_markup: { inline_keyboard: [[ { text: '✅ Approve', callback_data: 'approve_' + String($json.post_id) }, { text: '❌ Reject', callback_data: 'reject_' + String($json.post_id) } ]] } }) }}",
+        "jsonBody": "={{ JSON.stringify({ chat_id: '-1000000000000', photo: $json.image_url, caption: '🆔 Post ID: ' + String($json.post_id) + '\\n🎯 Angle: ' + String($json.angle) + ' (#' + String($json.post_index) + ' of 3)\\n\\n' + String($json.post_copy), reply_markup: { inline_keyboard: [[ { text: '✅ Approve', callback_data: 'approve_' + String($json.post_id) }, { text: '❌ Reject', callback_data: 'reject_' + String($json.post_id) } ]] } }) }}",
         "options": {}
       },
       "id": "b7afa90a-d3dd-400d-a6bc-fa219ee7f128",
@@ -564,17 +564,17 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "7f479693-2497-4534-82e6-31b150b25855",
+  "versionId": "",
   "meta": {
     "templateCredsSetupCompleted": true,
-    "instanceId": "edf5df5962f482a8698122feab91e027f3ec9c3fafe7c3e9b3755bfec307c836"
+    "instanceId": ""
   },
-  "id": "8f25bc8c14eb2dd0",
+  "id": "",
   "tags": [
     {
       "updatedAt": "2026-05-14T05:01:48.735Z",
       "createdAt": "2026-05-14T05:01:48.735Z",
-      "id": "85a9be753decefce",
+      "id": "",
       "name": "My Blog"
     }
   ]
